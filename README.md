@@ -2,6 +2,24 @@
 
 ## Getting Started
 
+### Overview
+
+There are a number of steps to get started but they're mostly simple and are
+involved with preserving security during the bootstrap process.  As such, you
+won't need to think too much and are typing commands only to keep terraform
+from keeping it in state.
+
+Here are the steps in brief:
+
+1) configure docker networking
+2) generate a gossip encryption key
+3) generate acl tokens
+4) generate tls certs
+5) configure your terraform providers
+6) configure your network's DNS to use consul
+
+## The Steps
+
 ### Prerequisites
 
 You will need at least one _Linux_ docker host.  It must be linux because it
@@ -15,7 +33,7 @@ more traditional approaches provided in Hashicorp's documentation).
 
 For help setting that up, see my related [`docker_macvlan_bridge`][1] ansible role.
 
-### generate a `consul.key`
+### Generate a `consul.key`
 
 You will need to make a consul bootstrap key.  The most reliable way to
 document doing this this is via the consul docker container as described below
@@ -25,7 +43,7 @@ but any machine with consul can also do this via `consul keygen`.
 docker run consul keygen > consul.key
 ```
 
-### generate acl tokens
+### Generate acl tokens
 
 This solution creates acl tokens for management and vault.  These are pregenerated
 and so you must pregenerate them to keep them secure.  Here's a way to do so if
@@ -49,7 +67,21 @@ printf '{
 }' `uuid -v 4` `uuid -v 4` `uuid -v 4` `uuid -v 4` > tokens.json
 ```
 
-### configure your `providers.tf`
+### Generate TLS certs
+
+You will need to generate some certs to bootstrap the cluster.  In the example below,
+`10.0.0.2`, `10.0.0.3`, `10.0.0.4` are the consul servers.
+`10.0.1.2`, `10.0.1.3`, `10.0.1.4` are the vault servers.
+`dc1` is the datacenter name.
+`consul` is the domain name.
+
+```bash
+consul tls ca create
+consul tls cert create -client -additional-ipaddress=10.0.1.2 -additional-ipaddress=10.0.1.3 -additional-ipaddress=10.0.1.4 -additional-dnsname=vault.service.consul
+nonsul tls cert create -server -additional-ipaddress=10.0.0.2 -additional-ipaddress=10.0.0.3 -additional-ipaddress=10.0.0.4 -additional-dnsname=consul.service.consul
+```
+
+### Configure your `providers.tf`
 
 This was tested with ssh access to docker hosts.  You will need to set up your
 docker hosts for this and the user with which you connect for direct access to
@@ -59,14 +91,14 @@ must work).
 You _may_ use the same host for all three `hashistack1-3` hosts.  You will need
 to duplicate the provider for this to work.
 
-### configure your variables
+### Configure your variables
 
 You may configure your variables however you like.  I use the terraform.tfvars
 file.
 
 The variables which need to be set are available in vars.tf
 
-### configure your network
+### Configure your network
 
 You need to forward all `.consul` dns traffic to your consul cluster before
 spinning up terraform.  Lookups will fail until the cluster is up but will
@@ -106,7 +138,7 @@ If your target host is relatively low memory (<4G), you should also limit parall
 so that docker clients won't OOM your host while refreshing state.  This can be done
 with `terraform xxxxx -parallelism=1` or similar.
 
-### providers-local.tf
+### `providers-local.tf`
 
 This is active terraform configuration that I use.  To keep it reusable for others, I
 keep my actual providers in `providers-local.tf`.  
