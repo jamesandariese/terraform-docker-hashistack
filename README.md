@@ -114,19 +114,16 @@ or conditional forwarder.
 
 ### Bootstrap vault
 
-Your vault service won't be ready to use yet and it also won't work via its intended
-`vault.service.consul` address yet.  This is because none of the vault servers
-will be unsealed since they won't have any configuration at all.  You may perform
-this configuration by adding `your-vault-IP vault.service.consul` to /etc/hosts
-and navigating to https://vault.service.consul:8200/ .  Setup the unseal key and root
-token and save the output to somewhere secure like a password manager.  You will see
-in consul that 
+Your vault service won't be ready to use yet and it also won't work via its
+intended `vault.service.consul` address yet.  This is because none of the vault
+servers will be unsealed since they won't have any configuration at all.
 
-FIXME: https is current aspirational.  tls is disabled while I figure out how to
-reliably _and_ securely bootstrap it.  Until that is accomplished, vault will not
-be secure during bootstrap and any secrets sent to it over a network will be
-readable by anyone with physical access to the network (or to a device with that
-access).
+You may bootstrap the cluster either via the IP address using the vault CLI or
+more simply, you can navigate to https://vault-ip:8200/ and do it there.  This
+is the purpose of the -additional-ipaddress flags during TLS cert generation.
+
+You may bootstrap on any of the vault hosts that you've configured and the
+tokens will propagate to all vault servers via the consul backend.
 
 ## Notes
 
