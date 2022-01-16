@@ -1,0 +1,7 @@
+/terraform.tfstate*
+.*
+\#*#
+*~
+/consul.key
+/terraform.tfvars
+/providers-local.tf
