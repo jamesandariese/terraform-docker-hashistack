@@ -1,0 +1,19 @@
+acl = "write"
+agent_prefix "" {
+	policy = "read"
+}
+key_prefix "vault/" {
+	policy = "write"
+}
+node_prefix "vault" {
+	policy = "write"
+}
+node_prefix "" {
+	policy = "read"
+}
+service_prefix "vault" {
+	policy = "write"
+}
+session_prefix "" {
+	policy = "write"
+}

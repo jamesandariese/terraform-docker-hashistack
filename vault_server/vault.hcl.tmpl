@@ -1,7 +1,9 @@
 listener "tcp" {
-  address          = "0.0.0.0:8200"
-  cluster_address  = "0.0.0.0:8201"
-  tls_disable      = "true"
+  address            = "0.0.0.0:8200"
+  cluster_address    = "0.0.0.0:8201"
+  tls_cert_file      = "/vault/cert.pem"
+  tls_key_file       = "/vault/key.pem"
+  tls_client_ca_file = "/vault/ca.pem"
 }
 
 ui = "true"

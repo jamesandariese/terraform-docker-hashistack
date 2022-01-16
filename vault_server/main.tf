@@ -3,7 +3,7 @@ data "docker_network" "trunk" {
 }
 
 resource "docker_image" "vault" {
-    name = "vault:latest"
+    name = "jamesandariese/vault-tls:1.9.1"
     keep_locally = true
 }
 
@@ -50,6 +50,23 @@ resource "docker_container" "server" {
         container_path = "/vault"
         volume_name = docker_volume.vault.name
     }
+
+    upload {
+        file = "/vault/bootstrap-cert.pem"
+        source = "${path.root}/dc1-client-consul-0.pem"
+        source_hash = filesha256("${path.root}/dc1-client-consul-0.pem")
+    }
+    upload {
+        file = "/vault/bootstrap-key.pem"
+        source = "${path.root}/dc1-client-consul-0-key.pem"
+        source_hash = filesha256("${path.root}/dc1-client-consul-0-key.pem")
+    }
+    upload {
+        file = "/vault/bootstrap-ca.pem"
+        source = "${path.root}/consul-agent-ca.pem"
+        source_hash = filesha256("${path.root}/consul-agent-ca.pem")
+    }   
+
 
     capabilities {
         add = ["CAP_IPC_LOCK"]
