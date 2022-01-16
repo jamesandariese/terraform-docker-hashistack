@@ -25,6 +25,30 @@ but any machine with consul can also do this via `consul keygen`.
 docker run consul keygen > consul.key
 ```
 
+### generate acl tokens
+
+This solution creates acl tokens for management and vault.  These are pregenerated
+and so you must pregenerate them to keep them secure.  Here's a way to do so if
+you have a `uuid` command available.  `sudo apt-get install -y uuid` for debian
+which can be run in docker.  Be sure to use a random UUID (v4).
+
+```bash
+printf '{
+    "management": {
+         "secret": "%s",
+         "accessor": "%s"
+    },
+    "vault": {
+         "secret": "%s",
+         "accessor": "%s"
+    },
+    "anonymous": {
+         "secret": "anonymous",
+         "accessor": "00000000-0000-0000-0000-000000000002"
+    }
+}' `uuid -v 4` `uuid -v 4` `uuid -v 4` `uuid -v 4` > tokens.json
+```
+
 ### configure your `providers.tf`
 
 This was tested with ssh access to docker hosts.  You will need to set up your
