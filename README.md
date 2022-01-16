@@ -64,6 +64,8 @@ to duplicate the provider for this to work.
 You may configure your variables however you like.  I use the terraform.tfvars
 file.
 
+The variables which need to be set are available in vars.tf
+
 ### configure your network
 
 You need to forward all `.consul` dns traffic to your consul cluster before
