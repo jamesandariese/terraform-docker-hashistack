@@ -19,7 +19,7 @@ Here are the steps in brief:
 6) configure your network's DNS to use consul
 
 There is also a `bootstrap-repo.sh` that you may use if you're planning to
-use the same defaults as me.
+use a 3 consul host, 3 vault host cluster.
 
 ## The Steps
 
