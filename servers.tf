@@ -37,16 +37,22 @@ module "consul-c" {
         docker = docker.hashistack3
     }
 }
+
+locals {
+    bootstrap_environment = {
+        MANAGEMENT_TOKEN = local.consul_acl_tokens.management.secret
+        MANAGEMENT_ACCESSOR = local.consul_acl_tokens.management.accessor
+        VAULT_TOKEN = local.consul_acl_tokens.vault.secret
+        VAULT_ACCESSOR = local.consul_acl_tokens.vault.accessor
+    }
+}
+
 resource "null_resource" "bootstrap-consul-acl" {
     provisioner "local-exec" {
         command = "bash ${path.root}/bootstrap-consul-acl.sh https://${var.consul-a_ipv4_address}:8501"
-        environment = {
-            MANAGEMENT_TOKEN = local.consul_acl_tokens.management.secret
-            MANAGEMENT_ACCESSOR = local.consul_acl_tokens.management.accessor
-            VAULT_TOKEN = local.consul_acl_tokens.vault.secret
-            VAULT_ACCESSOR = local.consul_acl_tokens.vault.accessor
-        }
+        environment = local.bootstrap_environment
     }
+    triggers = local.bootstrap_environment
     depends_on = [
         module.consul-a,
         module.consul-b,
