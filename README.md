@@ -156,7 +156,9 @@ restoring a consul snapshot (operationalizing consul beyond bringing it up is
 outside the scope of this project but suffice it to say, "backup your data".)
 
 Before starting this process, recreate your tokens.json file with the original
-tokens which will be restored in the snapshot.
+tokens which will be restored in the snapshot.  After recreating the cluster,
+run consul snapshot restore against the cluster with the lastest backup and
+all your consul-backed services will run as before, including vault.
 
 If you've lost your tokens.json file, you will end up installing new tokens
 and distributing them to vault.  Restoring the consul snapshot will then overwrite
@@ -166,6 +168,38 @@ the tokens back.  You may find that there are consul agents which can't connect
 due to node-id mismatches or other problems.  Use force-leave to get rid of them
 and docker restart the affected containers until things work properly.  This
 process is messy so the best bet is to not get in this situation.
+
+### Testing recovery before going to prod
+
+Here is the process used to test this (you will need to change `CONSUL_HTTP` to reflect your stack):
+
+```bash
+CONSUL_HTTP=https://10.0.1.2:8501
+
+mkdir ~/hashistack-artifacts
+
+consul snapshot save -token=$(jq -r .management.secret tokens.json) -http-addr=$CONSUL_HTTP -tls-server-name=server.dc1.consul -ca-file=consul-agent-ca.pem ~/hashistack-artifacts/backup.snap
+
+cp consul.key ~/hashistack-artifacts
+cp terraform.tfvars ~/hashistack-artifacts
+cp providers-local.tf ~/hashistack-artifacts
+cp tokens.json ~/hashistack-artifacts
+cp consul-acl-bootstrap.json ~/hashistack-artifacts
+cp consul-agent-ca-key.pem ~/hashistack-artifacts
+cp consul-agent-ca.pem ~/hashistack-artifacts
+cp dc1-client-consul-*.pem ~/hashistack-artifacts
+cp dc1-server-consul-*.pem ~/hashistack-artifacts
+
+terraform destroy -parallelism=5 -auto-approve
+RAND=$RANDOM
+git clone git@github.com:jamesandariese/terraform-docker-hashistack.git ~/hashistack-$RAND
+cd ~/hashistack-$RAND
+
+cp ~/hashistack-artifacts/* .
+terraform init
+terraform apply -parallelism=1 -auto-approve
+consul snapshot restore -token=$(jq -r .management.secret tokens.json) -http-addr=$CONSUL_HTTP -tls-server-name=server.dc1.consul -ca-file=consul-agent-ca.pem backup.snap
+```
 
 ## Notes
 
