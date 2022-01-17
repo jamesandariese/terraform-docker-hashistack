@@ -128,6 +128,45 @@ is the purpose of the -additional-ipaddress flags during TLS cert generation.
 You may bootstrap on any of the vault hosts that you've configured and the
 tokens will propagate to all vault servers via the consul backend.
 
+### Finalizing the deployment
+
+Save your generated configuration files to ease redeployment later.  Save them
+somewhere safe like a password manager.
+
+WARNING: These files give the holder the ability to completely subvert consul's
+security.
+
+```
+consul.key
+terraform.tfvars
+providers-local.tf
+tokens.json
+consul-acl-bootstrap.json
+consul-agent-ca-key.pem
+consul-agent-ca.pem
+dc1-client-consul-*.pem
+dc1-server-consul-*.pem
+```
+
+## Recovery
+
+If you should need to reinstall your cluster, for example because you have no
+cluster due to a disaster, you may do so by rerunning this terraform fresh and
+restoring a consul snapshot (operationalizing consul beyond bringing it up is
+outside the scope of this project but suffice it to say, "backup your data".)
+
+Before starting this process, recreate your tokens.json file with the original
+tokens which will be restored in the snapshot.
+
+If you've lost your tokens.json file, you will end up installing new tokens
+and distributing them to vault.  Restoring the consul snapshot will then overwrite
+the new tokens causing vault to fail.  You may either recreate your tokens.json
+and then rerun the terraform or use the `reinstall-tokens.sh` script to bring
+the tokens back.  You may find that there are consul agents which can't connect
+due to node-id mismatches or other problems.  Use force-leave to get rid of them
+and docker restart the affected containers until things work properly.  This
+process is messy so the best bet is to not get in this situation.
+
 ## Notes
 
 ### docker provider with ssh
