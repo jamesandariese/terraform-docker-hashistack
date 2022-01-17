@@ -117,6 +117,11 @@ or conditional forwarder.
 
 ### Bootstrap vault
 
+NOTE: If you are recovering from a disaster, you will perform recovery steps
+instead of bootstrapping vault.  Continue here if you're not planning on
+restoring a consul snapshot.  Continue in Recovery if you will be restoring
+consul instead of bootstrapping an empty vault.
+
 Your vault service won't be ready to use yet and it also won't work via its
 intended `vault.service.consul` address yet.  This is because none of the vault
 servers will be unsealed since they won't have any configuration at all.
@@ -154,6 +159,7 @@ If you should need to reinstall your cluster, for example because you have no
 cluster due to a disaster, you may do so by rerunning this terraform fresh and
 restoring a consul snapshot (operationalizing consul beyond bringing it up is
 outside the scope of this project but suffice it to say, "backup your data".)
+
 
 Before starting this process, recreate your tokens.json file with the original
 tokens which will be restored in the snapshot.  After recreating the cluster,
