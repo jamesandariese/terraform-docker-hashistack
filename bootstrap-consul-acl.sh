@@ -14,7 +14,7 @@ VAULT_DESCRIPTION="vault node and service token"
 #### Wait for consul start and leader election
 set +x # don't ruin our nice messages
 WAIT_FOR_LEADER_MSG="sleeping for %d seconds to give consul time to start and elect a leader..."
-WAIT_FOR_LEADER=60
+WAIT_FOR_LEADER=20
 WAIT_FOR_LEADER_INTERVAL=10
 WAITED=no
 while [ $WAIT_FOR_LEADER -gt 0 ];do

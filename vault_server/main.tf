@@ -2,14 +2,19 @@ data "docker_network" "trunk" {
     name = var.trunk
 }
 
-resource "docker_image" "vault" {
-    name = "jamesandariese/vault-tls:1.9.1"
-    keep_locally = true
-}
-
 resource "docker_image" "debian" {
     name = "debian:11"
     keep_locally = true
+
+    # don't start downloading more stuff until the consul_agent is up
+    depends_on = [module.consul_agent]
+}
+
+resource "docker_image" "vault" {
+    name = "jamesandariese/vault-tls:1.9.1"
+    keep_locally = true
+    # order these image downloads, please
+    depends_on = [docker_image.debian]
 }
 
 resource "docker_volume" "vault" {

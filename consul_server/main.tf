@@ -24,6 +24,7 @@ resource "docker_image" "debian" {
 resource "docker_image" "consul" {
     name = "jamesandariese/consul-tls:1.11.2"
     keep_locally = true
+    depends_on = [docker_image.debian]
 }
 
 resource "docker_volume" "consul" {

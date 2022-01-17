@@ -28,6 +28,7 @@ resource "docker_image" "debian" {
 resource "docker_image" "consul" {
   name = "consul:latest"
   keep_locally = true
+  depends_on = [docker_image.debian]
 }
 
 resource "docker_container" "sleeper" {
