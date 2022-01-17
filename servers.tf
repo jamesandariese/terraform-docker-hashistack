@@ -6,7 +6,6 @@ module "consul-a" {
 
     encrypt = local.consul_bootstrap_token
     cluster_address = var.consul-b_ipv4_address
-    order = 1
 
     providers = {
         docker = docker.hashistack1
@@ -20,7 +19,6 @@ module "consul-b" {
 
     encrypt = local.consul_bootstrap_token
     cluster_address = var.consul-c_ipv4_address
-    order = 2
 
     providers = {
         docker = docker.hashistack2
@@ -34,7 +32,6 @@ module "consul-c" {
 
     encrypt = local.consul_bootstrap_token
     cluster_address = var.consul-a_ipv4_address
-    order = 3
 
     providers = {
         docker = docker.hashistack3

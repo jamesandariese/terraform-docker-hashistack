@@ -7,14 +7,6 @@ variable "encrypt" {}
 variable "cluster_address" {
     default = "consul.service.consul"
 }
-variable "order" {
-    default = 1
-    type = number
-}
-variable "order_enforcer_wait_time" {
-    default = 7
-    type = number
-}
 
 output "https" {
     value = "https://${var.ipv4_address}:8501"
@@ -54,18 +46,8 @@ resource "docker_container" "sleeper" {
     }
 }
 
-resource "null_resource" "order_enforcer" {
-    provisioner "local-exec" {
-        command = "sleep ${(var.order - 1) * 7 + 1}"
-    }
-}
-
-locals {
-    order_hack = substr(null_resource.order_enforcer.id, 0, 0)
-}
-
 resource "docker_container" "server" {
-    name = "${var.hostname}_consul_server${local.order_hack}"
+    name = "${var.hostname}_consul_server"
     image = docker_image.consul.latest
     restart = "always"
 
@@ -124,10 +106,4 @@ resource "docker_container" "server" {
         container_path = "/consul/data"
         volume_name = docker_volume.consul_data.name
     }
-
-    # this is a hack to enforce parallelism=1 for just this resource...
-    # hope everything really just takes 7 seconds!
-    depends_on = [
-        null_resource.order_enforcer
-    ]
 }
