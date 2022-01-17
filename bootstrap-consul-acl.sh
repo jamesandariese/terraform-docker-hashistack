@@ -1,20 +1,33 @@
 #!/bin/sh
 
 set -x
-
 cd "$(dirname "$0")"
 
-until curl -k "$1" 2>&1 > /dev/null;do
-    echo waiting for consul to come up
-    sleep 5
-done
-
+#### validate env
 if [ x"$MANAGEMENT_TOKEN" = x ];then 1>&2 echo MANAGEMENT_TOKEN not set ; exit 1;fi
 if [ x"$MANAGEMENT_ACCESSOR" = x ];then 1>&2 echo MANAGEMENT_ACCESSOR not set ; exit 1;fi
 if [ x"$VAULT_TOKEN" = x ];then 1>&2 echo VAULT_TOKEN not set ; exit 1;fi
 if [ x"$VAULT_ACCESSOR" = x ];then 1>&2 echo VAULT_ACCESSOR not set ; exit 1;fi
 MANAGEMENT_DESCRIPTION="global management token"
 VAULT_DESCRIPTION="vault node and service token"
+
+#### Wait for consul start and leader election
+set +x # don't ruin our nice messages
+WAIT_FOR_LEADER_MSG="sleeping for %d seconds to give consul time to start and elect a leader..."
+WAIT_FOR_LEADER=60
+WAIT_FOR_LEADER_INTERVAL=10
+WAITED=no
+while [ $WAIT_FOR_LEADER -gt 0 ];do
+    printf "$WAIT_FOR_LEADER_MSG\n" $WAIT_FOR_LEADER
+    sleep 10
+    WAITED=yes
+    WAIT_FOR_LEADER_MSG="%d seconds left..."
+    WAIT_FOR_LEADER=$((WAIT_FOR_LEADER - WAIT_FOR_LEADER_INTERVAL))
+done
+if [ "$WAITED" = yes ];then echo done;fi
+set -x
+
+#### do the actual work
 
 CONSUL_ARGS="-http-addr=$1 -tls-server-name=server.dc1.consul -ca-file=consul-agent-ca.pem"
 

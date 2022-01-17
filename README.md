@@ -18,6 +18,9 @@ Here are the steps in brief:
 5) configure your terraform providers
 6) configure your network's DNS to use consul
 
+There is also a `bootstrap-repo.sh` that you may use if you're planning to
+use the same defaults as me.
+
 ## The Steps
 
 ### Prerequisites

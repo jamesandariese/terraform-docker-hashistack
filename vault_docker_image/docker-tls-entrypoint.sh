@@ -44,4 +44,21 @@ if [ ! -f "key.pem" ];then
     cp bootstrap-key.pem key.pem
 fi
 
+if [ ! -e /vault/config/vault.hcl ]; then
+    echo "Generating default config in /vault/config/vault.hcl"
+    cat << EOF > /vault/config/vault.hcl
+listener "tcp" {
+  address            = "0.0.0.0:8200"
+  cluster_address    = "0.0.0.0:8201"
+  tls_cert_file      = "/vault/cert.pem"
+  tls_key_file       = "/vault/key.pem"
+  tls_client_ca_file = "/vault/ca.pem"
+}
+
+ui = "true"
+
+storage "consul" {}
+EOF
+fi
+
 exec /bin/consul-template -template /vault/tls-shim.txt.tmpl:/tmp/tls-shim.txt -exec "/usr/local/bin/docker-entrypoint.sh ${*@Q}"

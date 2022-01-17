@@ -16,27 +16,27 @@ resource "docker_volume" "vault" {
     name = "${var.hostname}_vault_server_volume"
 }
 
-resource "docker_container" "setup" {
-    name = "${var.hostname}_vault_setup"
-    image = docker_image.debian.latest
-
-    # this will install the config and then not be running.  if we don't
-    # specify must_run, it will try to create a new one on every run and fail
-    # because it still exists.
-
-    must_run = false
-
-    command = [
-        "bash",
-        "-c",
-        "mkdir -p /vault/config ; echo -e '${replace(templatefile("${path.module}/vault.hcl.tmpl", {}), "'", "'\"'\"'")}' > /vault/config/vault.hcl ; sleep 60",
-    ]
-
-    volumes {
-        container_path = "/vault"
-        volume_name = docker_volume.vault.name
-    }
-}
+#resource "docker_container" "setup" {
+#    name = "${var.hostname}_vault_setup"
+#    image = docker_image.debian.latest
+#
+#    # this will install the config and then not be running.  if we don't
+#    # specify must_run, it will try to create a new one on every run and fail
+#    # because it still exists.
+#
+#    must_run = false
+#
+#    command = [
+#        "bash",
+#        "-c",
+#        "mkdir -p /vault/config ; echo -e '${replace(templatefile("${path.module}/vault.hcl.tmpl", {}), "'", "'\"'\"'")}' > /vault/config/vault.hcl ; sleep 60",
+#    ]
+#
+#    volumes {
+#        container_path = "/vault"
+#        volume_name = docker_volume.vault.name
+#    }
+#}
 
 resource "docker_container" "server" {
     name = "${var.hostname}_vault_server"
@@ -74,7 +74,7 @@ resource "docker_container" "server" {
 
     # this is a hack to enforce parallelism=1 for just this resource...
     # hope everything really just takes 7 seconds!
-    depends_on = [
-        docker_container.setup
-    ]
+    #depends_on = [
+    #    docker_container.setup
+    #]
 }
