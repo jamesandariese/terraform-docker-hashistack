@@ -7,6 +7,8 @@ variable "encrypt" {}
 variable "cluster_address" {
     default = "consul.service.consul"
 }
+variable "management_token" {
+}
 
 output "https" {
     value = "https://${var.ipv4_address}:8501"
@@ -64,6 +66,7 @@ resource "docker_container" "server" {
         "-bootstrap-expect", "3",
         "-dns-port", "53",
         "-data-dir", "/consul/data",
+        "-config-dir", "/consul/config",
         "-hcl", "connect { enabled = true }",
         "-hcl", "ca_file = \"/consul/ca.pem\"",
         "-hcl", "cert_file = \"/consul/cert.pem\"",
@@ -79,23 +82,29 @@ resource "docker_container" "server" {
 
     upload {
         file = "/consul/bootstrap-cert.pem"
-        source = "${path.root}/dc1-server-consul-0.pem"
-        source_hash = filesha256("${path.root}/dc1-server-consul-0.pem")
+        source = "${path.root}/../dc1-server-consul-0.pem"
+        source_hash = filesha256("${path.root}/../dc1-server-consul-0.pem")
     }
     upload {
         file = "/consul/bootstrap-key.pem"
-        source = "${path.root}/dc1-server-consul-0-key.pem"
-        source_hash = filesha256("${path.root}/dc1-server-consul-0-key.pem")
+        source = "${path.root}/../dc1-server-consul-0-key.pem"
+        source_hash = filesha256("${path.root}/../dc1-server-consul-0-key.pem")
     }
     #upload {
     #    file = "/consul/bootstrap-ca-key.pem"
-    #    source = "${path.root}/consul-agent-ca-key.pem"
-    #    source_hash = filesha256("${path.root}/consul-agent-ca-key.pem")
+    #    source = "${path.root}/../consul-agent-ca-key.pem"
+    #    source_hash = filesha256("${path.root}/../consul-agent-ca-key.pem")
     #}
     upload {
         file = "/consul/bootstrap-ca.pem"
-        source = "${path.root}/consul-agent-ca.pem"
-        source_hash = filesha256("${path.root}/consul-agent-ca.pem")
+        source = "${path.root}/../consul-agent-ca.pem"
+        source_hash = filesha256("${path.root}/../consul-agent-ca.pem")
+    }
+    upload {
+        file = "/consul/config/tokens.hcl"
+        content = templatefile("${path.module}/tokens.hcl.tftpl", {
+            management_token=var.management_token,
+        })
     }
 
     volumes {
@@ -107,4 +116,21 @@ resource "docker_container" "server" {
         container_path = "/consul/data"
         volume_name = docker_volume.consul_data.name
     }
+}
+
+resource "time_sleep" "wait_for_consul_bootstrap" {
+  depends_on = [
+    docker_container.server
+  ]
+
+  create_duration = "5s"
+  triggers = merge(
+      { management_token = var.management_token },
+      { container_id = docker_container.server.id },
+      { container_id = docker_container.sleeper.id },
+  )
+}
+
+output "ipv4_address" {
+    value = var.ipv4_address
 }

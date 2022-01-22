@@ -1,15 +1,15 @@
 variable "consul_cluster" {
     default = "consul.service.consul"
+    type = string
 }
-variable "consul_token_name" {
-    default = "vault"
-}
-variable "hostname" {}
-variable "ipv4_address" {}
+variable "consul_token" { type=string }
+variable "hostname" { type=string}
+variable "ipv4_address" { type=string}
 variable "trunk" {
     default = "trunk"
+    type=string
 }
-variable "consul_encrypt" {}
+variable "consul_encrypt" { type = string }
 
 module "consul_agent" {
     source = "../consul_agent"
@@ -18,8 +18,8 @@ module "consul_agent" {
     ipv4_address = var.ipv4_address
     trunk = var.trunk
     encrypt = var.consul_encrypt
-    token_name = var.consul_token_name
-    cluster_address = var.consul_cluster
+    token = var.consul_token
+    cluster_addresses = [var.consul_cluster]
 }
 
 

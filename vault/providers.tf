@@ -27,8 +27,8 @@ terraform {
 # }
 
 provider "consul" {
-    address = module.consul-a.https
-    ca_file = "${path.root}/consul-agent-ca.pem"
-    token = jsondecode(file("${path.root}/consul-acl-bootstrap.json")).SecretID
+    address = "https://consul.service.consul:8501"
+    ca_file = "${path.root}/../consul-agent-ca.pem"
+    token = var.management_token #jsondecode(file("${path.root}/consul-acl-bootstrap.json")).SecretID
     #insecure_https = true
 }

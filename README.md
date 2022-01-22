@@ -36,39 +36,32 @@ more traditional approaches provided in Hashicorp's documentation).
 
 For help setting that up, see my related [`docker_macvlan_bridge`][1] ansible role.
 
-### Generate a `consul.key`
+### Generate a consul key
 
 You will need to make a consul bootstrap key.  The most reliable way to
 document doing this this is via the consul docker container as described below
 but any machine with consul can also do this via `consul keygen`.
 
 ```bash
-docker run consul keygen > consul.key
+docker run consul keygen
 ```
 
-### Generate acl tokens
+### Generate a management acl token
 
-This solution creates acl tokens for management and vault.  These are pregenerated
-and so you must pregenerate them to keep them secure.  Here's a way to do so if
-you have a `uuid` command available.  `sudo apt-get install -y uuid` for debian
-which can be run in docker.  Be sure to use a random UUID (v4).
+This deployment solution for consul relies on a precreated acl token for management
+to avoid the secret 0 problem and staged rollout problem created by normal
+bootstrapping.  You will only need one token to get started.
 
 ```bash
-printf '{
-    "management": {
-         "secret": "%s",
-         "accessor": "%s"
-    },
-    "vault": {
-         "secret": "%s",
-         "accessor": "%s"
-    },
-    "anonymous": {
-         "secret": "anonymous",
-         "accessor": "00000000-0000-0000-0000-000000000002"
-    }
-}' `uuid -v 4` `uuid -v 4` `uuid -v 4` `uuid -v 4` > tokens.json
+uuid -v 4
 ```
+
+### Configure your variables
+
+You may configure your variables however you like.  I use the terraform.tfvars
+file.
+
+The variables which need to be set are available in vars.tf
 
 ### Generate TLS certs
 
@@ -94,13 +87,6 @@ must work).
 You _may_ use the same host for all three `hashistack1-3` hosts.  You will need
 to duplicate the provider for this to work.
 
-### Configure your variables
-
-You may configure your variables however you like.  I use the terraform.tfvars
-file.
-
-The variables which need to be set are available in vars.tf
-
 ### Configure your network
 
 You need to forward all `.consul` dns traffic to your consul cluster before
@@ -113,7 +99,34 @@ or conditional forwarder.
 
 ### Run terraform!
 
-```terraform apply```
+
+#### Deploy consul
+
+You will need to change to the consul directory to bootstrap consul first.
+
+```bash
+cd consul
+terraform apply -parallelism=1
+cd ..
+```
+
+#### Test DNS in your network
+
+This must work from your deployment host before vault can be provisioned
+because DNS is used to decouple the terraform state for consul from the vault
+deployment.
+
+```bash
+dig consul.service.consul
+```
+
+### Deploy vault
+
+```bash
+cd vault
+terraform apply -parallelism=1
+cd ..
+```
 
 ### Bootstrap vault
 
@@ -142,11 +155,8 @@ WARNING: These files give the holder the ability to completely subvert consul's
 security.
 
 ```
-consul.key
 terraform.tfvars
 providers-local.tf
-tokens.json
-consul-acl-bootstrap.json
 consul-agent-ca-key.pem
 consul-agent-ca.pem
 dc1-client-consul-*.pem
@@ -155,67 +165,31 @@ dc1-server-consul-*.pem
 
 ## Recovery
 
-If you should need to reinstall your cluster, for example because you have no
-cluster due to a disaster, you may do so by rerunning this terraform fresh and
-restoring a consul snapshot (operationalizing consul beyond bringing it up is
-outside the scope of this project but suffice it to say, "backup your data".)
-
-
-Before starting this process, recreate your tokens.json file with the original
-tokens which will be restored in the snapshot.  After recreating the cluster,
-run consul snapshot restore against the cluster with the lastest backup and
-all your consul-backed services will run as before, including vault.
-
-If you've lost your tokens.json file, you will end up installing new tokens
-and distributing them to vault.  Restoring the consul snapshot will then overwrite
-the new tokens causing vault to fail.  You may either recreate your tokens.json
-and then rerun the terraform or use the `reinstall-tokens.sh` script to bring
-the tokens back.  You may find that there are consul agents which can't connect
-due to node-id mismatches or other problems.  Use force-leave to get rid of them
-and docker restart the affected containers until things work properly.  This
-process is messy so the best bet is to not get in this situation.
-
-### Testing recovery before going to prod
-
-Here is the process used to test this (you will need to change `CONSUL_HTTP` to reflect your stack):
-
-```bash
-CONSUL_HTTP=https://10.0.1.2:8501
-
-mkdir ~/hashistack-artifacts
-
-consul snapshot save -token=$(jq -r .management.secret tokens.json) -http-addr=$CONSUL_HTTP -tls-server-name=server.dc1.consul -ca-file=consul-agent-ca.pem ~/hashistack-artifacts/backup.snap
-
-cp consul.key ~/hashistack-artifacts
-cp terraform.tfvars ~/hashistack-artifacts
-cp providers-local.tf ~/hashistack-artifacts
-cp tokens.json ~/hashistack-artifacts
-cp consul-acl-bootstrap.json ~/hashistack-artifacts
-cp consul-agent-ca-key.pem ~/hashistack-artifacts
-cp consul-agent-ca.pem ~/hashistack-artifacts
-cp dc1-client-consul-*.pem ~/hashistack-artifacts
-cp dc1-server-consul-*.pem ~/hashistack-artifacts
-
-terraform destroy -parallelism=5 -auto-approve
-RAND=$RANDOM
-git clone git@github.com:jamesandariese/terraform-docker-hashistack.git ~/hashistack-$RAND
-cd ~/hashistack-$RAND
-
-cp ~/hashistack-artifacts/* .
-terraform init
-terraform apply -parallelism=1 -auto-approve
-consul snapshot restore -token=$(jq -r .management.secret tokens.json) -http-addr=$CONSUL_HTTP -tls-server-name=server.dc1.consul -ca-file=consul-agent-ca.pem backup.snap
-```
+See [`RESTORE.md`][2]
 
 ## Notes
 
-### docker provider with ssh
+### docker provider
 
-This provider has exited on me for no apparent reason many times.  Just rerun terraform.
+#### Locking/Racing/Too-much-at-once-ism
 
-If your target host is relatively low memory (<4G), you should also limit parallelism
-so that docker clients won't OOM your host while refreshing state.  This can be done
-with `terraform xxxxx -parallelism=1` or similar.
+The docker provider used for this project currently (Jan 2022) cannot prevent
+itself from creating error situations where the docker host is being asked to
+do two things at the same time which must happen in serial.  Things like
+downloading multiple images at the same time are an example.  This requires you
+to use `-parallelism=1` to avoid the issue.  If you forget to use this flag,
+terraform may work anyway but it may also fail with an obscure error about
+docker exiting.  If you have a default ssh config, it may also spit out a
+message about xauth which is the reddest of herrings.
+
+#### Memory requirements of parallelism
+
+If your target host is relatively low memory (<4G), you should limit
+parallelism anyway so that docker clients won't OOM your host while refreshing
+state.  This can be done with `terraform xxxxx -parallelism=1` or similar but
+since the provider seems to create situations where docker fails due to running
+commands at the same time which must be queued, this issue currently will not
+be seen.
 
 ### `providers-local.tf`
 
@@ -227,3 +201,4 @@ providers (`hashistack1-3`) into your own `providers-local.tf`.
 
 
 [1]: https://github.com/jamesandariese/ansible-docker-macvlan-trunk
+[2]: ./RESTORE.md

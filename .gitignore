@@ -1,13 +1,14 @@
-/terraform.tfstate*
+terraform.tfstate*
 .*
 \#*#
 *~
 /consul.key
 /terraform.tfvars
-/providers-local.tf
+providers-local.tf
 /tokens.json
 /consul-acl-bootstrap.json
 /consul-agent-ca-key.pem
 /consul-agent-ca.pem
 /dc1-client-consul-*.pem
 /dc1-server-consul-*.pem
+/backup.snap*
