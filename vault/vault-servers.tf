@@ -1,5 +1,5 @@
 resource "consul_acl_policy" "vault-server" {
-  name        = "vault-server"
+  name        = "vault-server-${local.run_id}"
 
   rules       = <<-RULE
     acl = "write"
@@ -25,7 +25,7 @@ resource "consul_acl_policy" "vault-server" {
 }
 
 resource "consul_acl_token" "vault-server" {
-  description = "my test token"
+  description = "vault-server-${local.run_id}"
   policies = [consul_acl_policy.vault-server.name]
 }
 

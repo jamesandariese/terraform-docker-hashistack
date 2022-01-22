@@ -1,5 +1,5 @@
 resource "consul_acl_policy" "dns-lookups" {
-  name        = "dns-lookups"
+  name        = "dns-lookups-${local.run_id}"
 
   rules       = <<-RULE
     node_prefix "consul-dns-" {
@@ -20,7 +20,7 @@ resource "consul_acl_policy" "dns-lookups" {
 }
 
 resource "consul_acl_token" "dns-lookups" {
-  description = "my test token"
+  description = "dns-lookups-${local.run_id}"
   policies = [consul_acl_policy.dns-lookups.name]
   depends_on = [ null_resource.consul_deployed ]
 }

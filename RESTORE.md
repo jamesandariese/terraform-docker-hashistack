@@ -36,23 +36,12 @@ containers (like vault's), remove and import resources into state, or other
 nasty things.  Disaster recovery can be very complicated.
 
 One caveat is that the DNS containers will definitely not work properly if
-recreated.
-This is because the DNS containers were recreated and their tokens were
-also recreated.  To resolve this:
- 2) delete the token in state (it doesn't actually exist after snapshot restore)
+recreated.  This is because the DNS containers were recreated and their tokens
+were also recreated but were not in the original snapshot.  Just rerun
+terraform after the snapshot restore to add the tokens that were created during
+DR back to consul.
 
-    ```bash
-    terraform state rm consul_acl_policy.dns-lookups
-    ```
-
- 3) import the existing token
-    ```bash
-    terraform import consul_acl_policy.dns-lookups $(
-        consul acl policy read \
-            -name=dns-lookups \
-            -format=json | jq -r .ID)
-    ```
- 4) run terraform apply again
+  1) run terraform apply again
     ```bash
     terraform apply -parallelism=1 -auto-approve
     ```
@@ -70,17 +59,19 @@ This process has been tested with the following process:
   * this will give us the ability to ensure vault functionality is restored
 5) Take a snapshot
   * consul snapshot save in repo/
-5) Destroy consul cluster
+6) Destroy consul cluster
   * terraform destroy in repo/consul/
-6) Recreate consul cluster
+7) Recreate consul cluster
   * terraform apply in repo/consul/
-7) Fix your DNS policy and token (see above)
 8) Login to new consul cluster
   * ensure recreated consul cluster works
 9) Check consul kv store to ensure it's blank
   * ensure recreated consul cluster is truly recreated
 10) Restore consul snapshot from #5
   * this should restore all data and functionality
+11) Rerun terraform apply in repo/consul/
+  * fix tokens for dns nodes (add them again because they were destroyed during
+    consul snapshot restore)
 11) Check consul kv store to ensure it contains vault's data
   * you shouldn't need to login again because the ACL tokens will have carried
     over but if you do, then login again
@@ -116,6 +107,18 @@ run a `force-leave` on one of the consul servers.  You may do so by sshing to
 the host of the first consul server and running (e.g., for `consul-dns-a`)
 `docker exec -ti consul-a_consul_server consul force-leave consul-dns-a`
 and then restarting the docker container for the consul agent of the service.
+You may also just restart the agent first and see if it works.  It might!
+
+Here is a sample of a node ID collision:
+```bash
+2022-01-21T00:34:04.477Z [WARN]  agent: Syncing node info failed.: error="rpc error making call: failed inserting node: Error while renaming Node ID: "92666a8d-7ed8-52af-9a36-9825c9cbf449": Node name vault-b is reserved by node 1eaf0bc3-56a0-6d6b-0b02-4d78bee8e9c7 with name vault-b (10.0.2.3)"
+```
+
+This was resolved with the following command:
+```bash
+docker restart vault-b_consul_sidecar
+```
+
 
 This can happen to any container and is a fairly reasonable problem to have
 when recreating the services.  This should only happen to a service which
