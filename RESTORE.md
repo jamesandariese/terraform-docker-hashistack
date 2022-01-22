@@ -8,17 +8,24 @@ affected assets.
 
 Assumptions:
  * consul https address is `10.0.1.2`
- * your token is `root`
+ * your token is `e31690cf-cec7-46f5-9b1c-97ad079931b2` (get it from terraform.tfvars)
  * snapshot at `backup.snap`
  * consul's cert is rooted by `consul-agent-ca.pem`
  * your primary datacenter is `dc1`
 
+First, setup your consul environment from `terraform.tfstate`:
+
 ```bash
-consul snapshot restore -token=root \
-    -http-addr=https://10.0.1.2:8501 \
-    -tls-server-name=server.dc1.consul \
-    -ca-file=consul-agent-ca.pem \
-    backup.snap
+cd consul #if you're not already there.
+export CONSUL_HTTP_TOKEN="$(jq -r '.resources[]|select(.name == "wait_for_consul_bootstrap" and .module == "module.consul-a")|.instances[].attributes.triggers.management_token' terraform.tfstate)"
+export CONSUL_HTTP_ADDR="https://$(jq -r '.outputs.consul_addresses.value[0]' terraform.tfstate):8501"
+export CONSUL_CACERT=$PWD/../consul-agent-ca.pem
+export CONSUL_TLS_SERVER_NAME=server.dc1.consul
+```
+
+Now restore your snapshot:
+```bash
+consul snapshot restore backup.snap
 ```
 
 If your backup.snap is recent enough, you should see no interruption.  As
@@ -27,6 +34,29 @@ success.  If you do not have a recent enough snapshot for your ACLs to
 remain up to date, you may need to recreate them, recreate agent
 containers (like vault's), remove and import resources into state, or other
 nasty things.  Disaster recovery can be very complicated.
+
+One caveat is that the DNS containers will definitely not work properly if
+recreated.
+This is because the DNS containers were recreated and their tokens were
+also recreated.  To resolve this:
+ 2) delete the token in state (it doesn't actually exist after snapshot restore)
+
+    ```bash
+    terraform state rm consul_acl_policy.dns-lookups
+    ```
+
+ 3) import the existing token
+    ```bash
+    terraform import consul_acl_policy.dns-lookups $(
+        consul acl policy read \
+            -name=dns-lookups \
+            -format=json | jq -r .ID)
+    ```
+ 4) run terraform apply again
+    ```bash
+    terraform apply -parallelism=1 -auto-approve
+    ```
+
 
 This process has been tested with the following process:
 
@@ -44,16 +74,17 @@ This process has been tested with the following process:
   * terraform destroy in repo/consul/
 6) Recreate consul cluster
   * terraform apply in repo/consul/
-7) Login to new consul cluster
+7) Fix your DNS policy and token (see above)
+8) Login to new consul cluster
   * ensure recreated consul cluster works
-8) Check consul kv store to ensure it's blank
+9) Check consul kv store to ensure it's blank
   * ensure recreated consul cluster is truly recreated
-9) Restore consul snapshot from #5
+10) Restore consul snapshot from #5
   * this should restore all data and functionality
-10) Check consul kv store to ensure it contains vault's data
+11) Check consul kv store to ensure it contains vault's data
   * you shouldn't need to login again because the ACL tokens will have carried
     over but if you do, then login again
-11) Check that vault contains the key created in #4
+12) Check that vault contains the key created in #4
   * you shouldn't need to login again for this either but if you see errors in
     the web interface then click logout in the top right and login again with
     the same info from #4.
