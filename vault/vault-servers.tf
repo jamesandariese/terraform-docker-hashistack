@@ -42,6 +42,10 @@ module "vault-a" {
     trunk = data.docker_network.hashistack1_trunk.name
     consul_encrypt = var.consul_encrypt_key
     consul_token = data.consul_acl_token_secret_id.vault-server.secret_id
+    approle_role_id = var.vault_server_approle_role_id
+    approle_secret_id = var.vault-a-vault_server_approle_secret_id
+
+    ca_path = "${path.root}/../ca-certificates"
 
     providers = {
         docker = docker.hashistack1
@@ -54,8 +58,12 @@ module "vault-b" {
     trunk = data.docker_network.hashistack2_trunk.name
     consul_encrypt = var.consul_encrypt_key
     consul_token = data.consul_acl_token_secret_id.vault-server.secret_id
+    approle_role_id = var.vault_server_approle_role_id
+    approle_secret_id = var.vault-b-vault_server_approle_secret_id
 
     depends_on = [ module.vault-a ]
+
+    ca_path = "${path.root}/../ca-certificates"
 
     providers = {
         docker = docker.hashistack2
@@ -68,8 +76,12 @@ module "vault-c" {
     trunk = data.docker_network.hashistack3_trunk.name
     consul_encrypt = var.consul_encrypt_key
     consul_token = data.consul_acl_token_secret_id.vault-server.secret_id
+    approle_role_id = var.vault_server_approle_role_id
+    approle_secret_id = var.vault-c-vault_server_approle_secret_id
 
     depends_on = [ module.vault-b ]
+
+    ca_path = "${path.root}/../ca-certificates"
 
     providers = {
         docker = docker.hashistack3

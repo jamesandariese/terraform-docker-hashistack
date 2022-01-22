@@ -47,6 +47,8 @@ resource "docker_container" "server" {
     name = "${var.hostname}_vault_server"
     image = docker_image.vault.latest
 
+    restart = "unless-stopped"
+
     command = [
         "server",
     ]
@@ -58,18 +60,18 @@ resource "docker_container" "server" {
 
     upload {
         file = "/vault/bootstrap-cert.pem"
-        source = "${path.root}/../dc1-client-consul-0.pem"
-        source_hash = filesha256("${path.root}/../dc1-client-consul-0.pem")
+        source = "${path.root}/../bootstrap/certs/bootstrap-vault-server.pem"
+        source_hash = filesha256("${path.root}/../bootstrap/certs/bootstrap-vault-server.pem")
     }
     upload {
         file = "/vault/bootstrap-key.pem"
-        source = "${path.root}/../dc1-client-consul-0-key.pem"
-        source_hash = filesha256("${path.root}/../dc1-client-consul-0-key.pem")
+        source = "${path.root}/../bootstrap/certs/bootstrap-vault-server-key.pem"
+        source_hash = filesha256("${path.root}/../bootstrap/certs/bootstrap-vault-server-key.pem")
     }
     upload {
         file = "/vault/bootstrap-ca.pem"
-        source = "${path.root}/../consul-agent-ca.pem"
-        source_hash = filesha256("${path.root}/../consul-agent-ca.pem")
+        source = "${path.root}/../bootstrap/ca.pem"
+        source_hash = filesha256("${path.root}/../bootstrap/ca.pem")
     }   
 
 

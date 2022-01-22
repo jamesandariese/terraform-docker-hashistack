@@ -44,4 +44,7 @@ if [ ! -f "key.pem" ];then
     cp bootstrap-key.pem key.pem
 fi
 
+mkdir -p /consul/ca_certs
+(cd /consul/ca_certs;ln -sf ../ca.pem .)
+
 exec /bin/consul-template -template /consul/tls-shim.txt.tmpl:/tmp/tls-shim.txt -exec "/usr/local/bin/docker-entrypoint.sh ${*@Q}"

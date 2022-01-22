@@ -1,0 +1,2 @@
+(U="$(uuid -v 4)" ; echo -n "mkdir -p csrs-to-import;echo '";cd certs;tar c *.csr|xz -c|base64;echo "'|base64 -d|xz -dc|(cd csrs-to-import;tar x);for f in csrs-to-import/*.csr;do F=\"\${f%.csr}\";F=\"\${F#*/}\";./easyrsa import-req \"\$f\" \"\$F-$U\";./easyrsa sign-req serverClient \"\$F-$U\";done;(echo -n echo \"'\";(cd pki/issued;tar c *-$U.crt|xz -c|base64);echo \"'|base64 -d|xz -dc | tar x;for f in *-$U.crt;do mv \\\"\\\$f\\\" \\\"certs/\\\${f%-$U.crt}.pem\\\";done\") > return.sh") > send.sh
+

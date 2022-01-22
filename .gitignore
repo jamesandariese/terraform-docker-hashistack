@@ -13,3 +13,9 @@ providers-local.tf
 /dc1-server-consul-*.pem
 backup.snap*
 /test/test-tf
+/consul-pki/consul_pki_ca.csr
+/consul-pki/consul_pki_ca.pem
+*.pem
+/ca-certificates/*
+*.csr
+bootstrap/send.sh

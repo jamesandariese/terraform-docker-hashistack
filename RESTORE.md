@@ -129,6 +129,64 @@ exits cleanly) so you will probably not see this in testing unless you delete
 the docker containers, kill -9 the processes, or use any other process which
 doesn't allow them to exit cleanly.
 
+## Terraform being obnoxious (ACL exists, no leader, etc)
+
+Usually not terraform's fault per se.  But here's some stuff that will cause
+hair pulling and only when running terraform.
+
+### Failed to read policy ...
+
+```
+Error: Failed to read policy 'fac63669-cb76-8bcc-7fb0-bc35052eed8c': Unexpected response code: 500 (No cluster leader)
+   with consul_acl_policy.dns-lookups,
+...
+```
+
+You will see this sort of error any time you're attempting to use the consul
+provider while consul is broken.  This will be pretty much every time after
+you've deployed that you're interacting with it outside of upgrades so be
+ready for it (example using the resource from the example error above...
+adjust to suit your situation):
+
+```
+terraform state rm consul_acl_policy.dns-lookups
+```
+
+and retry your terraform apply/destroy.
+
+### A policy with name... already exists
+
+```
+Error: error creating ACL policy: Unexpected response code: 500 (Invalid Policy: A Policy with Name "dns-lookups-1234567890" already exists)
+```
+
+This is because you had to `terraform state rm consul_acl_policy.dns-lookups`.
+If this happens, you will also need to taint the time_static.run resource to
+get it to generate new policy names.  You may also want to clean up your ACLs
+in consul after.
+
+```
+terraform taint time_static.run
+```
+
+### Repeated TLS errors despite changing certificates
+
+Because of how the bootstrap certs are replaced, if you attempt to 
+`terraform apply` in the consul environment over an existing deployment,
+you will not be updating the actual cert.pem, et al.  You will only
+overwrite the bootstrap-cert.pem and related files but for safety, the cert.pem
+file will not be overwritten on subsequent restarts of the container.  This
+means that if the volume is preserved but the docker container is restarted
+and a new bootstrap-cert.pem is uploaded, the cert will still not be replaced.
+
+```
+# don't forget to snapshot your cluster if it's still operational
+terraform destroy;terraform apply
+```
+
+Fully reprovision the environment (or taint the volumes) to replace the certs.
+This will probably mean restoring a snapshot, too, so take a snapshot first
+if you can.
 
 
 [1]: https://learn.hashicorp.com/tutorials/consul/access-control-troubleshoot?utm_source=consul.io&utm_medium=docs#reset-the-acl-system

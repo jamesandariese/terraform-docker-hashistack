@@ -50,6 +50,8 @@ module "consul-dns-server-a" {
     token = data.consul_acl_token_secret_id.dns-lookups.secret_id
     encrypt = var.consul_encrypt_key
 
+    ca_path = "${path.root}/../ca-certificates"
+
     config = local.consul_dns_agent_config
 
     cluster_addresses = [ module.consul-a.ipv4_address, module.consul-b.ipv4_address, module.consul-c.ipv4_address ]
@@ -64,6 +66,8 @@ module "consul-dns-server-b" {
     trunk = data.docker_network.hashistack1_trunk.name
     token = data.consul_acl_token_secret_id.dns-lookups.secret_id
     encrypt = var.consul_encrypt_key
+
+    ca_path = "${path.root}/../ca-certificates"
 
     config = local.consul_dns_agent_config
 
@@ -81,6 +85,9 @@ module "consul-dns-server-c" {
     encrypt = var.consul_encrypt_key
 
     config = local.consul_dns_agent_config
+
+    ca_path = "${path.root}/../ca-certificates"
+
 
     cluster_addresses = [ module.consul-a.ipv4_address, module.consul-b.ipv4_address, module.consul-c.ipv4_address ]
     providers = { docker = docker.hashistack3 }

@@ -16,3 +16,13 @@ variable "hashistack3_trunk_network_name" {type = string}
 
 variable "management_token" {type = string}
 variable "consul_encrypt_key" {type = string}
+
+variable "consul_server_approle_role_id" {type = string}
+variable "consul-a-consul_server_approle_secret_id" {type = string}
+variable "consul-b-consul_server_approle_secret_id" {type = string}
+variable "consul-c-consul_server_approle_secret_id" {type = string}
+
+variable "vault_server_approle_role_id" {type = string}
+variable "vault-a-vault_server_approle_secret_id" {type = string}
+variable "vault-b-vault_server_approle_secret_id" {type = string}
+variable "vault-c-vault_server_approle_secret_id" {type = string}
