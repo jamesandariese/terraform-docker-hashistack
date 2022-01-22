@@ -11,5 +11,5 @@ providers-local.tf
 /consul-agent-ca.pem
 /dc1-client-consul-*.pem
 /dc1-server-consul-*.pem
-/backup.snap*
+backup.snap*
 /test/test-tf
