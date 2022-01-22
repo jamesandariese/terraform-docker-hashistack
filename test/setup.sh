@@ -45,4 +45,4 @@ cd consul
 terraform init
 terraform apply -auto-approve -parallelism=1
 
-dig @172.23.128.53 consul.service.consul | grep .
+dig +short @172.23.128.53 consul.service.consul | grep .
