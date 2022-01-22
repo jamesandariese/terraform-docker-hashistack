@@ -12,3 +12,4 @@ providers-local.tf
 /dc1-client-consul-*.pem
 /dc1-server-consul-*.pem
 /backup.snap*
+/test/test-tf

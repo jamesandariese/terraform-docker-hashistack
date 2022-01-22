@@ -96,4 +96,6 @@ provider "docker" {
 provider "docker" {
   alias = "hashistack3"
   host = "ssh://'"$DOCKER_USER_C"'@'"$DOCKER_IP_C"':22"
-}' > providers-local.tf
+}' > consul/providers-local.tf
+
+cp consul/providers-local.tf vault/providers-local.tf
