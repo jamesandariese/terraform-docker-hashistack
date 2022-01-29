@@ -1,5 +1,5 @@
 resource "vault_approle_auth_backend_role" "consul-server" {
-  backend        = data.vault_auth_backend.approle.path
+  backend        = vault_auth_backend.approle.path
   role_name      = "consul-server"
   token_period   = 3600
   token_bound_cidrs = [
