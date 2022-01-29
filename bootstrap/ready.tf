@@ -26,6 +26,18 @@ locals {
         EOF
 }
 
+output "bcs_csr_ready" {value = module.bootstrap-consul-server.csr_ready}
+output "bcs_key_ready" {value = module.bootstrap-consul-server.key_ready}
+output "bcs_cert_ready" {value = module.bootstrap-consul-server.cert_ready}
+
+output "bcc_csr_ready" {value = module.bootstrap-consul-client.csr_ready}
+output "bcc_key_ready" {value = module.bootstrap-consul-client.key_ready}
+output "bcc_cert_ready" {value = module.bootstrap-consul-client.cert_ready}
+
+output "bvs_csr_ready" {value = module.bootstrap-vault-server.csr_ready}
+output "bvs_key_ready" {value = module.bootstrap-vault-server.key_ready}
+output "bvs_cert_ready" {value = module.bootstrap-vault-server.cert_ready}
+
 output "ready" {
     value = local.ready
 }

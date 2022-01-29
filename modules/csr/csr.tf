@@ -71,19 +71,58 @@ resource "local_file" "bootstrap-server-key" {
     content = tls_private_key.key.private_key_pem
 }
 
+data "external" "csr_modulus" {
+    program = ["${path.module}/extract-modulus.sh"]
+    query = {
+        csr = tls_cert_request.bootstrap-server.cert_request_pem
+        cookie = tls_private_key.key.private_key_pem
+        fail_no_file = false
+    }
+}
+
+data "external" "cert_modulus" {
+    #count = fileexists(var.cert_filename) ? 1 : 0
+    program = ["${path.module}/extract-modulus.sh"]
+    query = {
+        cert_file = var.cert_filename
+        cookie = tls_private_key.key.private_key_pem
+        fail_no_file = false
+    }
+}
+
+data "external" "key_modulus" {
+    program = ["${path.module}/extract-modulus.sh"]
+    query = {
+        rsa_key = tls_private_key.key.private_key_pem
+        cookie = tls_private_key.key.private_key_pem
+        fail_no_file = false
+    }
+}
+
 locals {
-    ready = fileexists(var.cert_filename)
+    key_modulus = data.external.key_modulus.result.modulus
+    cert_modulus = data.external.cert_modulus.result.modulus
+    csr_modulus = data.external.csr_modulus.result.modulus
+    key_ready = local.key_modulus != ""
+    cert_ready = local.key_ready && local.cert_modulus == local.key_modulus
+    csr_ready = local.key_ready && local.csr_modulus == local.key_modulus
+    ready = (
+                local.key_ready && local.cert_ready && local.csr_ready
+            )
     ready_count = local.ready ? 1 : 0
 }
 
-data "local_file" "bootstrap-server-cert" {
-  filename = var.cert_filename
-  count    = local.ready_count
-}
+#data "local_file" "bootstrap-server-cert" {
+#    filename = var.cert_filename
+#}
 
 output "ready" {
     value = local.ready
 }
+
+output "key_ready" { value = local.key_ready }
+output "csr_ready" { value = local.csr_ready }
+output "cert_ready" { value = local.cert_ready }
 
 output "ready_count" {
     value = local.ready_count
