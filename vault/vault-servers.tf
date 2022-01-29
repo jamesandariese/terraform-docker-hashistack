@@ -87,3 +87,7 @@ module "vault-c" {
         docker = docker.hashistack3
     }
 }
+
+output "vault_https" {
+    value = "https://${var.vault-a_ipv4_address}:8200/"
+}

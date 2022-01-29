@@ -101,3 +101,7 @@ resource "null_resource" "consul-dns-servers-deployed" {
         module.consul-dns-server-c,
     ]
 }
+
+output "dns_server_a" { value = var.consul-dns-a_ipv4_address }
+output "dns_server_b" { value = var.consul-dns-b_ipv4_address }
+output "dns_server_c" { value = var.consul-dns-c_ipv4_address }

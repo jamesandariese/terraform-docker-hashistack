@@ -1,204 +1,219 @@
-# Create a hashistack in docker
+#
 
-## Getting Started
+## Prerequisites
 
-### Overview
+You will need:
 
-There are a number of steps to get started but they're mostly simple and are
-involved with preserving security during the bootstrap process.  As such, you
-won't need to think too much and are typing commands only to keep terraform
-from keeping it in state.
+* An initialized CA which can sign an intermediate CA and client and server
+  certs with IP and URL SANs (use [easy-rsa][easyrsa] for this)
 
-Here are the steps in brief:
+We will assume:
 
-1) configure docker networking
-2) generate a gossip encryption key
-3) generate acl tokens
-4) generate tls certs
-5) configure your terraform providers
-6) configure your network's DNS to use consul
+* You're using a macbook.  If you're not, you probably will recognize how to
+  modify the commands to work in Linux.  If you're using Windows, you're on
+  your own... sorry.  Feel free to submit a PR with Windows instructions.
+* You have a USB stick named `SneakerNet`.  This will be /Volumes/SneakerNet.
+* All multiline instructions start at the root of the repo unless otherwise
+  specified.
+* You use vim.  I use vim, anyway.  Or emacs.  Or nano.  Or whatever is there.
+  vim or at least vi is often there so I use it a lot.  `:q` to quit. `:wq` to
+  save and quit.  `:q!` to quit without saving.  Check a quick reference if
+  you need further help.
 
-There is also a `bootstrap-repo.sh` that you may use if you're planning to
-use a 3 consul host, 3 vault host cluster.
+## Create your tfvars file
 
-## The Steps
+You will need to populate your tfvars.  Use terraform.tfvars.sample for a start
+and use the tips.  
 
-### Prerequisites
-
-You will need at least one _Linux_ docker host.  It must be linux because it
-expects a macvlan network.  This allows each docker container to have its own
-IP address on your LAN.  For testing, you may use any docker network but you
-will need to assign static IPs within the docker network, even if it's the
-default NATted network (this is because the automation presented here expects
-you to want a static IP for consul for DNS to work reliably -- if you don't
-want to build a docker-based hashistack, you probably want to use one of the
-more traditional approaches provided in Hashicorp's documentation).
-
-For help setting that up, see my related [`docker_macvlan_bridge`][1] ansible role.
-
-### Generate a consul key
-
-You will need to make a consul bootstrap key.  The most reliable way to
-document doing this this is via the consul docker container as described below
-but any machine with consul can also do this via `consul keygen`.
-
-```bash
-docker run consul keygen
+```
+cp terraform.tfvars.sample terraform.tfvars
+vim terraform.tfvars
 ```
 
-### Generate a management acl token
+## Bootstrap certs
 
-This deployment solution for consul relies on a precreated acl token for management
-to avoid the secret 0 problem and staged rollout problem created by normal
-bootstrapping.  You will only need one token to get started.
+First, get your root CA cert.  Put it on your SneakerNet stick.  It will be
+named `ca.crt` in my examples.
 
-```bash
-uuid -v 4
+```
+cd bootstrap
+cp /Volumes/SneakerNet/ca.crt ca.pem
+terraform init
+terraform apply
 ```
 
-### Configure your variables
+You should see `ready = false`.  This means that you've successfully generated
+your keys and CSRs and are ready to get them signed.  There is a script for
+aiding in this process:
 
-You may configure your variables however you like.  I use the terraform.tfvars
-file.
-
-The variables which need to be set are available in vars.tf
-
-### Generate TLS certs
-
-You will need to generate some certs to bootstrap the cluster.  In the example below,
-`10.0.0.2`, `10.0.0.3`, `10.0.0.4` are the consul servers.
-`10.0.1.2`, `10.0.1.3`, `10.0.1.4` are the vault servers.
-`dc1` is the datacenter name.
-`consul` is the domain name.
-
-```bash
-consul tls ca create
-consul tls cert create -client -additional-ipaddress=10.0.1.2 -additional-ipaddress=10.0.1.3 -additional-ipaddress=10.0.1.4 -additional-dnsname=vault.service.consul
-nonsul tls cert create -server -additional-ipaddress=10.0.0.2 -additional-ipaddress=10.0.0.3 -additional-ipaddress=10.0.0.4 -additional-dnsname=consul.service.consul
+```
+bash make-sender.sh
+cp send.sh /Volumes/SneakerNet/
 ```
 
-### Configure your `providers.tf`
+Now, you've got a script containing the CSRs which we can transfer to our root
+CA via SneakerNet stick.  `send.sh` takes the CSRs which were created and
+registers them in your easy-rsa system.  It then signs them and exports them
+via another shell script called `return.sh` which extracts the certificates
+into the appropriate place when run from `bootstrap`, ready for the next
+`terraform apply`.
 
-This was tested with ssh access to docker hosts.  You will need to set up your
-docker hosts for this and the user with which you connect for direct access to
-docker (i.e., no typing `sudo docker` when you login by hand -- `docker ps`
-must work).
+NOTE: Use of this script is not necessary but can make the process
+easier.  Ensure you trust the script that's created or skip using it (it's
+very dense and weird -- feel free to skip using it or try it out first).
 
-You _may_ use the same host for all three `hashistack1-3` hosts.  You will need
-to duplicate the provider for this to work.
+Regardless of your chosen method, you should have signed all your generated
+CSRs and placed the signed certs in the associated paths:
 
-### Configure your network
+```
+# read CSR from here
+# bootstrap-consul-client-read_csr_path = "./certs/bootstrap-consul-client.csr"
+# write signed cert here
+# bootstrap-consul-client-write_pem_path = "./certs/bootstrap-consul-client.pem"
+```
 
-You need to forward all `.consul` dns traffic to your consul cluster before
-spinning up terraform.  Lookups will fail until the cluster is up but will
-begin to work as soon as terraform finishes applying if everything is working
-properly.
+Now terraform apply again to finish the bootstrapping process:
 
-This setting is sometimes called a forwarder, resolver, recursive resolver,
-or conditional forwarder.
+```
+terraform apply
+cd ..
+```
 
-### Run terraform!
+You should see `ready = true`, indicating that you're done with the bootstrap
+process and are ready to continue
 
+## Deploy Consul
 
-#### Deploy consul
+Now you'll deploy consul.  At the end, you'll have a 3 node consul cluster and
+a 3 node DNS cluster which has special access to lookup all services.  The
+consul cluster itself will not allow arbitrary lookups and will not listen on
+port 53.
 
-You will need to change to the consul directory to bootstrap consul first.
+NOTE: Because this uses the docker provider in terraform, it is vulnerable to
+contention when deploying many things at once.  For this reason, parallelism
+must be limited to 1.
 
-```bash
+```
 cd consul
+terraform init
 terraform apply -parallelism=1
+# check the output of this to ensure it's your root CA.  We'll see it change
+# later during testing of the vault CA change.
+curl --cacert ../ca-certificates/bootstrap-ca.pem https://$(terraform output -json consul_addresses | jq -r '.[0]'):8501 -v 2>&1 |grep -E 'issuer:|subject:'
 cd ..
 ```
 
-#### Test DNS in your network
+NOTE: if your machines are very slow, the consul cluster may not be fully
+initialized at the end.  Wait a minute and run terraform apply again.  If it still
+doesn't work, investigate if you accidentally reused an IP.
+```
+Error: error creating ACL policy: Unexpected response code: 500 (No cluster leader)
 
-This must work from your deployment host before vault can be provisioned
-because DNS is used to decouple the terraform state for consul from the vault
-deployment.
-
-```bash
-dig consul.service.consul
+  with consul_acl_policy.dns-lookups,
+  on dns-servers.tf line 1, in resource "consul_acl_policy" "dns-lookups":
+   1: resource "consul_acl_policy" "dns-lookups" {
 ```
 
-### Deploy vault
+## Deploy Vault
 
-```bash
+Next up is the vault deployment.
+
+
+NOTE: Because this uses the docker provider in terraform, it is vulnerable to
+contention when deploying many things at once.  For this reason, parallelism
+must be limited to 1.
+
+```
 cd vault
+terraform init
 terraform apply -parallelism=1
+```
+
+### Initialize vault
+
+These steps describe how to initialize vault via the CLI interface.  You may prefer
+to use the web UI.  Feel free to do so.
+
+This will not be automated because it is the single most exploitable
+step in a production deployment.  You will be creating secrets which make your
+vault storage readable by anyone with access to the storage and you'll also be
+creating a root token for vault which can do anything.  These are your secrets;
+keep them safe!
+
+```
+vault operator init -ca-cert=../ca-certificates/bootstrap-ca.pem -address=`terraform output -raw vault_https`
+```
+Save the output to somewhere secure like a password manager.
+
+Now copy and paste the unseal keys and the token from where ever you saved
+them.  For the first login command, you will paste the root token which you
+just copied to your password manager.  For the second login command, vault will
+generate a new token which will expire in 8 hours using the root token and it
+will then save it to your filesystem.  This will still be a root token but the
+token will expire and be useless if stolen.
+
+```
+vault operator unseal -ca-cert=../ca-certificates/bootstrap-ca.pem -address=`terraform output -raw vault_https`
+vault operator unseal -ca-cert=../ca-certificates/bootstrap-ca.pem -address=`terraform output -raw vault_https`
+vault operator unseal -ca-cert=../ca-certificates/bootstrap-ca.pem -address=`terraform output -raw vault_https`
+vault login -ca-cert=../ca-certificates/bootstrap-ca.pem -address=`terraform output -raw vault_https`
+vault login -method=token -ca-cert=../ca-certificates/bootstrap-ca.pem -address=`terraform output -raw vault_https` $(vault token create -ca-cert=../ca-certificates/bootstrap-ca.pem -address=`terraform output -raw vault_https` -field=token -ttl=8h)
+```
+
+All done with vault for now.  You will need to unseal all your vault servers to
+achieve redundancy but you may do so at your leisure (if this isn't
+production).
+
+```
 cd ..
 ```
 
-### Bootstrap vault
+## Link consul and vault to vault's TLS provider
 
-NOTE: If you are recovering from a disaster, you will perform recovery steps
-instead of bootstrapping vault.  Continue here if you're not planning on
-restoring a consul snapshot.  Continue in Recovery if you will be restoring
-consul instead of bootstrapping an empty vault.
+Now you're going to deploy a TLS secret engine in vault which will be capable
+of generating trusted certificates for the .consul domain.  This is the origin
+of the name `consul-pki`.
 
-Your vault service won't be ready to use yet and it also won't work via its
-intended `vault.service.consul` address yet.  This is because none of the vault
-servers will be unsealed since they won't have any configuration at all.
-
-You may bootstrap the cluster either via the IP address using the vault CLI or
-more simply, you can navigate to https://vault-ip:8200/ and do it there.  This
-is the purpose of the -additional-ipaddress flags during TLS cert generation.
-
-You may bootstrap on any of the vault hosts that you've configured and the
-tokens will propagate to all vault servers via the consul backend.
-
-### Finalizing the deployment
-
-Save your generated configuration files to ease redeployment later.  Save them
-somewhere safe like a password manager.
-
-WARNING: These files give the holder the ability to completely subvert consul's
-security.
+Much of this process should also be followed to update the intermediate CA cert
+in vault as needed.
 
 ```
-terraform.tfvars
-providers-local.tf
-consul-agent-ca-key.pem
-consul-agent-ca.pem
-dc1-client-consul-*.pem
-dc1-server-consul-*.pem
+cd consul-pki
+terraform init
+terraform apply
+cp consul_pki_ca.csr /Volumes/SneakerNet
 ```
 
-## Recovery
+Sign the CSR with the same root CA from before.  You will need to ensure that you
+sign it as a subordinate CA.  In easy-rsa, this is achieved with the following:
 
-See [`RESTORE.md`][2]
+```
+./easyrsa import-req consul_pki_ca.csr consul_pki_ca
+./easyrsa sign-req ca consul_pki_ca
+```
 
-## Notes
+Now import the signed cert into your terraform and rerun terraform to import
+the cert into vault.
+```
+cp /Volumes/SneakerNet/consul_pki_ca.crt consul_pki_ca.pem
+terraform apply
+cd ..
+```
 
-### docker provider
+## Test the deployment
 
-#### Locking/Racing/Too-much-at-once-ism
+These should all yield useful results.  If any do not, you will need to
+troubleshoot your deployment.  If your digs timeout, your DNS forwarders may be
+misconfigured.  If your digs NACK instead, you still may need to fix your
+forwarders but it also may mean that your services are unhealthy.  Check
+consul's web interface for info about any failing health checks.
 
-The docker provider used for this project currently (Jan 2022) cannot prevent
-itself from creating error situations where the docker host is being asked to
-do two things at the same time which must happen in serial.  Things like
-downloading multiple images at the same time are an example.  This requires you
-to use `-parallelism=1` to avoid the issue.  If you forget to use this flag,
-terraform may work anyway but it may also fail with an obscure error about
-docker exiting.  If you have a default ssh config, it may also spit out a
-message about xauth which is the reddest of herrings.
+```
+cd consul
+curl --cacert ../ca-certificates/bootstrap-ca.pem https://$(terraform output -json consul_addresses | jq -r '.[0]'):8501 -v 2>&1 |grep -E 'issuer:|subject:'
+dig @$(terraform output -raw dns_server_a) consul.service.consul
+dig consul.service.consul
+dig vault.service.consul
+```
 
-#### Memory requirements of parallelism
-
-If your target host is relatively low memory (<4G), you should limit
-parallelism anyway so that docker clients won't OOM your host while refreshing
-state.  This can be done with `terraform xxxxx -parallelism=1` or similar but
-since the provider seems to create situations where docker fails due to running
-commands at the same time which must be queued, this issue currently will not
-be seen.
-
-### `providers-local.tf`
-
-This is active terraform configuration that I use.  To keep it reusable for others, I
-keep my actual providers in `providers-local.tf`.  
-
-If you would like to track upstream without conflicts, you can also copy the example
-providers (`hashistack1-3`) into your own `providers-local.tf`.
-
-
-[1]: https://github.com/jamesandariese/ansible-docker-macvlan-trunk
-[2]: ./RESTORE.md
+[easyrsa]: https://github.com/OpenVPN/easy-rsa

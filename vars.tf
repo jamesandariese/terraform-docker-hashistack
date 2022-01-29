@@ -10,6 +10,10 @@ variable "vault-a_ipv4_address" {type = string}
 variable "vault-b_ipv4_address" {type = string}
 variable "vault-c_ipv4_address" {type = string}
 
+variable "hashistack1_url" {type = string}
+variable "hashistack2_url" {type = string}
+variable "hashistack3_url" {type = string}
+
 variable "hashistack1_trunk_network_name" {type = string}
 variable "hashistack2_trunk_network_name" {type = string}
 variable "hashistack3_trunk_network_name" {type = string}

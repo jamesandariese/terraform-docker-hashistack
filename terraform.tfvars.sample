@@ -1,0 +1,48 @@
+# --------------------------------------------------
+# These are existing resources
+# --------------------------------------------------
+# fill these with your docker host[s]' IPs
+hashistack1_url = "ssh://james@192.168.1.91:22"
+hashistack2_url = "ssh://james@192.168.1.92:22"
+hashistack3_url = "ssh://james@192.168.1.93:22"
+# these are the docker network name (docker network ls) they should use the
+# macvlan driver to give direct access to the LAN
+hashistack1_trunk_network_name = "trunk"
+hashistack2_trunk_network_name = "trunk"
+hashistack3_trunk_network_name = "trunk"
+
+
+# --------------------------------------------------
+# These are resources which will be created
+# --------------------------------------------------
+# fill these with IPs which are available in your LAN
+consul-a_ipv4_address = "192.168.1.49"
+consul-b_ipv4_address = "192.168.1.48"
+consul-c_ipv4_address = "192.168.1.47"
+vault-a_ipv4_address = "192.168.1.46"
+vault-b_ipv4_address = "192.168.1.45"
+vault-c_ipv4_address = "192.168.1.44"
+# these ones in particular are important.  you will want to set these up as
+# resolvers for .consul _before_ running anything in this repo to enable the
+# third and fourth environments to find vault and consul via their names
+consul-dns-a_ipv4_address = "192.168.1.53"
+consul-dns-b_ipv4_address = "192.168.1.54"
+consul-dns-c_ipv4_address = "192.168.1.55"
+
+# create these with `uuid -v 4`
+# here's some macro help if you happen to do this a lot:
+#   :r!uuid -v4
+management_token = ""
+consul_server_approle_role_id = ""
+consul-a-consul_server_approle_secret_id = ""
+consul-b-consul_server_approle_secret_id = ""
+consul-c-consul_server_approle_secret_id = ""
+vault_server_approle_role_id = ""
+vault-a-vault_server_approle_secret_id = ""
+vault-b-vault_server_approle_secret_id = ""
+vault-c-vault_server_approle_secret_id = ""
+
+# create with `consul keygen`
+# macro help:
+#   :r!consul keygen
+consul_encrypt_key = ""
