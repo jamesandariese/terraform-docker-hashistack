@@ -15,7 +15,7 @@ prefer without sacrificing security.
 We will setup a gcrypt repo and also setup a read-only remote
 for tracking upstream changes.
 
-## Setup
+### Setup
 
 The first step will be to create an empty repo.  We'll use github
 for this example.  Mine will be called `jamesandariese/hs2.022k`.
@@ -28,14 +28,14 @@ git remote set-url upstream --push "do not push to upstream"
 git remote add origin gcrypt::git@github.com:jamesandariese/hs2.022k.git
 ```
 
-## First use
+### First use
 
 After configuring this repo for the first time, you will have many additional
 untracked files.  This is normal and the whole goal of this document.  Commit
 them and push to your encrypted repo.  These are all your stack secrets and
 sending them to an encrypted repo allows you to remove them from your laptop.
 
-## Updating from upstream
+### Updating from upstream
 
 To incorporate changes from upstream (assuming you're on main already):
 
@@ -48,7 +48,7 @@ git merge upstream/main
 
 If there are conflicts, you will need to resolve them.
 
-## Deleting and restoring
+### Deleting and restoring
 
 When you're not working with the repo, you may wish to delete it from disk.
 This will clear your remotes and you will need to set them up again.
@@ -59,7 +59,9 @@ cd my-own-hashistack
 bash add-upstream.sh
 ```
 
-## weird ioctl error
+## Trouble and how to shoot it
+
+### weird ioctl error
 
 This is talked about on the interwebs but since there's a lot of layers here,
 I'll add that the ioctl error like the following is because of pinentry.
