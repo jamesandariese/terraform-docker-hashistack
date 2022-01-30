@@ -1,4 +1,6 @@
-#
+# `docker-hashistack`
+
+See the demo at [asciinema](https://asciinema.org/a/QnAKUC1uf9UlYeKwlmNpTRjkX).
 
 ## Prerequisites
 
