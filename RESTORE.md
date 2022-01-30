@@ -1,5 +1,9 @@
-## Restoration after disaster
 
+# Restoration after disaster
+
+See the demo at [asciinema](https://asciinema.org/a/Wr8LprhOIrfvpTCn8rRkEx5mu)
+
+## Get Started
 Assuming you've got a backup.snap (if you don't, you're out of luck for
 automated restore options), you can restore it to the cluster to restore
 operations.  This is a simple operation which will restore all ACLs and data.
