@@ -2,6 +2,29 @@
 
 See the demo at [asciinema](https://asciinema.org/a/QnAKUC1uf9UlYeKwlmNpTRjkX).
 
+## Design
+
+This is a dockerized hashistack.  It uses macvlan trunking in Linux and Docker
+to achieve LAN connectivity for its containers.
+
+### Goals
+
+A reliable and operationally sound hashistack
+
+Power and physical space efficiency
+
+Good security
+
+### Non Goals
+
+Following the reference architecture exactly is not a goal of this project.
+To achieve space as well as compute efficiency, we're using Docker to colocate
+the services on a set of up to 3 hosts.  This is against the recommendation of
+HashiCorp who would prefer that you deploy on separate hosts or at least on
+VMs both of which will increase the system requirements of running the stack
+as well as increase the operational overhead of maintaining this after-hours
+stack.
+
 ## Prerequisites
 
 You will need:
@@ -21,6 +44,9 @@ We will assume:
   vim or at least vi is often there so I use it a lot.  `:q` to quit. `:wq` to
   save and quit.  `:q!` to quit without saving.  Check a quick reference if
   you need further help.
+* You will only have a single datacenter and it will be dc1.  This is because
+  the design goal of this repo is to make a power and space efficient
+  hashistack, for a space constrained network (e.g., at home).
 
 ## Create your tfvars file
 
