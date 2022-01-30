@@ -44,7 +44,11 @@ variable "approle_secret_id" {
     type = string
     description = "approle role id for this consul agent and consul-template to login to vault"
 }
-
+variable "consul_node_id" {
+    type = string
+    description = "uuid of consul agent.  must be unique."
+    #default = ""
+}
 variable "ca_path" {
     type = string
     description = "local path containing all trusted CA root certificates"
@@ -147,6 +151,11 @@ resource "docker_container" "server" {
                 management_token=var.management_token,
             })
         }
+    }
+
+    upload {
+        file = "/consul/config/node_id.hcl"
+        content = var.consul_node_id == "" ? "# no node id set" : "node_id = \"${var.consul_node_id}\""
     }
 
     upload {

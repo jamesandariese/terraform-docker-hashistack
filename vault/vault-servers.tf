@@ -45,6 +45,8 @@ module "vault-a" {
     approle_role_id = var.vault_server_approle_role_id
     approle_secret_id = var.vault-a-vault_server_approle_secret_id
 
+    consul_node_id = var.vault-a-consul_client_node_id
+
     ca_path = "${path.root}/../ca-certificates"
 
     providers = {
@@ -60,6 +62,8 @@ module "vault-b" {
     consul_token = data.consul_acl_token_secret_id.vault-server.secret_id
     approle_role_id = var.vault_server_approle_role_id
     approle_secret_id = var.vault-b-vault_server_approle_secret_id
+
+    consul_node_id = var.vault-b-consul_client_node_id
 
     depends_on = [ module.vault-a ]
 
@@ -78,6 +82,8 @@ module "vault-c" {
     consul_token = data.consul_acl_token_secret_id.vault-server.secret_id
     approle_role_id = var.vault_server_approle_role_id
     approle_secret_id = var.vault-c-vault_server_approle_secret_id
+
+    consul_node_id = var.vault-c-consul_client_node_id
 
     depends_on = [ module.vault-b ]
 

@@ -10,7 +10,8 @@ variable "trunk" {
     type=string
 }
 variable "consul_encrypt" { type = string }
-variable "ca_path" {type = string}
+variable "ca_path" { type = string }
+variable "consul_node_id" { type = string }
 
 #variable "approle_role_id" {
 #    type = string
@@ -33,6 +34,8 @@ module "consul_agent" {
 
     approle_role_id = var.approle_role_id
     approle_secret_id = var.approle_secret_id
+
+    consul_node_id = var.consul_node_id
 
     ca_path = var.ca_path
 }

@@ -46,6 +46,17 @@ vault-a-vault_server_approle_secret_id = ""
 vault-b-vault_server_approle_secret_id = ""
 vault-c-vault_server_approle_secret_id = ""
 
+# More uuids.  these aren't secrets but they're important.
+consul-a-consul_server_node_id = ""
+consul-b-consul_server_node_id = ""
+consul-c-consul_server_node_id = ""
+consul-dns-a-consul_client_node_id = ""
+consul-dns-b-consul_client_node_id = ""
+consul-dns-c-consul_client_node_id = ""
+vault-a-consul_client_node_id = ""
+vault-b-consul_client_node_id = ""
+vault-c-consul_client_node_id = ""
+
 # create with `consul keygen`
 # macro help:
 #   :r!consul keygen

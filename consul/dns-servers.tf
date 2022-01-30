@@ -55,6 +55,8 @@ module "consul-dns-server-a" {
 
     ca_path = "${path.root}/../ca-certificates"
 
+    consul_node_id = var.consul-dns-a-consul_client_node_id
+
     config = local.consul_dns_agent_config
 
     cluster_addresses = [ module.consul-a.ipv4_address, module.consul-b.ipv4_address, module.consul-c.ipv4_address ]
@@ -75,6 +77,8 @@ module "consul-dns-server-b" {
 
     ca_path = "${path.root}/../ca-certificates"
 
+    consul_node_id = var.consul-dns-b-consul_client_node_id
+
     config = local.consul_dns_agent_config
 
     cluster_addresses = [ module.consul-a.ipv4_address, module.consul-b.ipv4_address, module.consul-c.ipv4_address ]
@@ -94,6 +98,8 @@ module "consul-dns-server-c" {
     approle_secret_id = var.consul-dns-c-consul_client_approle_secret_id
 
     ca_path = "${path.root}/../ca-certificates"
+
+    consul_node_id = var.consul-dns-c-consul_client_node_id
 
     config = local.consul_dns_agent_config
 

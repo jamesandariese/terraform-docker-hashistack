@@ -10,6 +10,8 @@ module "consul-a" {
     approle_role_id = var.consul_server_approle_role_id
     approle_secret_id = var.consul-a-consul_server_approle_secret_id
 
+    consul_node_id = var.consul-a-consul_server_node_id
+
     encrypt = var.consul_encrypt_key
     cluster_addresses = [var.consul-b_ipv4_address, var.consul-c_ipv4_address]
     management_token = var.management_token
@@ -29,6 +31,8 @@ module "consul-b" {
 
     approle_role_id = var.consul_server_approle_role_id
     approle_secret_id = var.consul-b-consul_server_approle_secret_id
+
+    consul_node_id = var.consul-b-consul_server_node_id
 
     encrypt = var.consul_encrypt_key
     cluster_addresses = [var.consul-a_ipv4_address, var.consul-c_ipv4_address]
@@ -51,6 +55,8 @@ module "consul-c" {
 
     approle_role_id = var.consul_server_approle_role_id
     approle_secret_id = var.consul-c-consul_server_approle_secret_id
+
+    consul_node_id = var.consul-c-consul_server_node_id
 
     encrypt = var.consul_encrypt_key
     cluster_addresses = [var.consul-a_ipv4_address, var.consul-b_ipv4_address]

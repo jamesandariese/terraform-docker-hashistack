@@ -35,3 +35,15 @@ variable "vault_server_approle_role_id" {type = string}
 variable "vault-a-vault_server_approle_secret_id" {type = string}
 variable "vault-b-vault_server_approle_secret_id" {type = string}
 variable "vault-c-vault_server_approle_secret_id" {type = string}
+
+variable "consul-a-consul_server_node_id" {type = string}
+variable "consul-b-consul_server_node_id" {type = string}
+variable "consul-c-consul_server_node_id" {type = string}
+
+variable "consul-dns-a-consul_client_node_id" {type = string}
+variable "consul-dns-b-consul_client_node_id" {type = string}
+variable "consul-dns-c-consul_client_node_id" {type = string}
+
+variable "vault-a-consul_client_node_id" {type = string}
+variable "vault-b-consul_client_node_id" {type = string}
+variable "vault-c-consul_client_node_id" {type = string}
