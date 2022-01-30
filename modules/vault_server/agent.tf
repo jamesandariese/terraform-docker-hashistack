@@ -11,6 +11,16 @@ variable "trunk" {
 }
 variable "consul_encrypt" { type = string }
 variable "ca_path" {type = string}
+
+#variable "approle_role_id" {
+#    type = string
+#    description = "approle role id which can create a consul client certificate in vault"
+#}
+#variable "approle_secret_id" {
+#    type = string
+#    description = "approle secret id which can create a consul client certificate in vault"
+#}
+
 module "consul_agent" {
     source = "../consul_agent"
 
@@ -18,8 +28,11 @@ module "consul_agent" {
     ipv4_address = var.ipv4_address
     trunk = var.trunk
     encrypt = var.consul_encrypt
-    token = var.consul_token
+    agent_token = var.consul_token
     cluster_addresses = [var.consul_cluster]
+
+    approle_role_id = var.approle_role_id
+    approle_secret_id = var.approle_secret_id
 
     ca_path = var.ca_path
 }

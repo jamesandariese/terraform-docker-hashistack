@@ -47,8 +47,11 @@ module "consul-dns-server-a" {
     hostname = "consul-dns-a"
     ipv4_address = var.consul-dns-a_ipv4_address
     trunk = data.docker_network.hashistack1_trunk.name
-    token = data.consul_acl_token_secret_id.dns-lookups.secret_id
+    agent_token = data.consul_acl_token_secret_id.dns-lookups.secret_id
     encrypt = var.consul_encrypt_key
+
+    approle_role_id = var.consul_client_approle_role_id
+    approle_secret_id = var.consul-dns-a-consul_client_approle_secret_id
 
     ca_path = "${path.root}/../ca-certificates"
 
@@ -56,16 +59,19 @@ module "consul-dns-server-a" {
 
     cluster_addresses = [ module.consul-a.ipv4_address, module.consul-b.ipv4_address, module.consul-c.ipv4_address ]
     providers = { docker = docker.hashistack1 }
-  depends_on = [ null_resource.consul_deployed ]
+    depends_on = [ null_resource.consul_deployed ]
 }
 
 module "consul-dns-server-b" {
     source = "../modules/consul_agent"
     hostname = "consul-dns-b"
     ipv4_address = var.consul-dns-b_ipv4_address
-    trunk = data.docker_network.hashistack1_trunk.name
-    token = data.consul_acl_token_secret_id.dns-lookups.secret_id
+    trunk = data.docker_network.hashistack2_trunk.name
+    agent_token = data.consul_acl_token_secret_id.dns-lookups.secret_id
     encrypt = var.consul_encrypt_key
+
+    approle_role_id = var.consul_client_approle_role_id
+    approle_secret_id = var.consul-dns-b-consul_client_approle_secret_id
 
     ca_path = "${path.root}/../ca-certificates"
 
@@ -73,25 +79,27 @@ module "consul-dns-server-b" {
 
     cluster_addresses = [ module.consul-a.ipv4_address, module.consul-b.ipv4_address, module.consul-c.ipv4_address ]
     providers = { docker = docker.hashistack2 }
-  depends_on = [ null_resource.consul_deployed ]
+    depends_on = [ null_resource.consul_deployed ]
 }
 
 module "consul-dns-server-c" {
     source = "../modules/consul_agent"
     hostname = "consul-dns-c"
     ipv4_address = var.consul-dns-c_ipv4_address
-    trunk = data.docker_network.hashistack1_trunk.name
-    token = data.consul_acl_token_secret_id.dns-lookups.secret_id
+    trunk = data.docker_network.hashistack3_trunk.name
+    agent_token = data.consul_acl_token_secret_id.dns-lookups.secret_id
     encrypt = var.consul_encrypt_key
 
-    config = local.consul_dns_agent_config
+    approle_role_id = var.consul_client_approle_role_id
+    approle_secret_id = var.consul-dns-c-consul_client_approle_secret_id
 
     ca_path = "${path.root}/../ca-certificates"
 
+    config = local.consul_dns_agent_config
 
     cluster_addresses = [ module.consul-a.ipv4_address, module.consul-b.ipv4_address, module.consul-c.ipv4_address ]
     providers = { docker = docker.hashistack3 }
-  depends_on = [ null_resource.consul_deployed ]
+    depends_on = [ null_resource.consul_deployed ]
 }
 
 resource "null_resource" "consul-dns-servers-deployed" {

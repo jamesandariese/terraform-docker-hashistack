@@ -61,4 +61,4 @@ storage "consul" {}
 EOF
 fi
 
-exec /bin/consul-template -template /vault/tls-shim.txt.tmpl:/tmp/tls-shim.txt -exec "/usr/local/bin/docker-entrypoint.sh ${*@Q}"
+exec /bin/consul-template -template /vault/tls-shim.txt.tmpl:/tmp/tls-shim.txt -exec-reload-signal SIGHUP -exec "/usr/local/bin/docker-entrypoint.sh ${*@Q}"

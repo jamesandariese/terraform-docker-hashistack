@@ -19,8 +19,14 @@ variable "ca_path" {
     #default = null
 }
 
+variable "extra_name" {
+    type = string
+    description = "an extra name component for if you use multiple consul_templates in a single namespace"
+    default = ""
+}
+
 resource "docker_container" "container" {
-    name = "${var.attach_container.hostname}_consul_template"
+    name = "${var.attach_container.hostname}_consul_template${var.extra_name}"
     image = docker_image.consul_template.latest
 
     restart = "unless-stopped"
@@ -31,6 +37,7 @@ resource "docker_container" "container" {
         for_each = var.attach_container.volumes
         content {
             container_path = volumes.value["container_path"]
+            read_only = false
             volume_name = volumes.value["volume_name"]
         }
     }

@@ -10,11 +10,16 @@ resource "docker_image" "debian" {
     depends_on = [module.consul_agent]
 }
 
+data "docker_registry_image" "vault" {
+  name = "jamesandariese/vault-tls:1.9.1"
+}
+
 resource "docker_image" "vault" {
-    name = "jamesandariese/vault-tls:1.9.1"
+    name = data.docker_registry_image.vault.name
     keep_locally = true
     # order these image downloads, please
     depends_on = [docker_image.debian]
+    pull_triggers = [data.docker_registry_image.vault.sha256_digest]
 }
 
 resource "docker_volume" "vault" {
@@ -55,6 +60,7 @@ resource "docker_container" "server" {
     network_mode = "container:${module.consul_agent.network_container.id}"
     volumes {
         container_path = "/vault"
+        read_only = false
         volume_name = docker_volume.vault.name
     }
 

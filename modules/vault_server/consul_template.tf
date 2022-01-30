@@ -36,12 +36,17 @@ locals {
 module "consul-template" {
     source = "../consul_template"
 
+    extra_name = "_vault"
+
     approle_role_id = var.approle_role_id
     approle_secret_id = var.approle_secret_id
 
     ca_path = var.ca_path
 
     config = <<-CONFIG
+        exec {
+            reload_signal = "SIGHUP"
+        }
         template {
             source = "/vault/ca-template.tmpl"
             destination = "/vault/ca.pem"

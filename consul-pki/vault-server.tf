@@ -7,7 +7,7 @@ resource "vault_approle_auth_backend_role" "vault-server" {
     var.vault-b_ipv4_address,
     var.vault-c_ipv4_address,
   ]
-  token_policies = ["default", vault_policy.vault-server-pki.name]
+  token_policies = ["default", vault_policy.vault-server-pki.name, "consul-pki-client"]
   role_id = var.vault_server_approle_role_id
 }
 
