@@ -133,7 +133,22 @@ exits cleanly) so you will probably not see this in testing unless you delete
 the docker containers, kill -9 the processes, or use any other process which
 doesn't allow them to exit cleanly.
 
-## Terraform being obnoxious (ACL exists, no leader, etc)
+### That last thing didn't work just using force-leave -prune
+
+Okay, sometimes it doesn't work.  [The anti-entropy in consul is very complex
+and it may need a kick][2].
+
+Run this in the consul server docker container (fix the node name and token):
+```bash
+curl -XPUT -H "X-Consul-Token: b6cc8e46-cdea-4651-b0ac-0db6dbee9e42" -d '{"Node":"consul-c"}' http://localhost:8500/v1/catalog/deregister
+```
+
+Now bounce the container with the following (again, adjust as needed):
+```bash
+docker restart consul-c_consul_server
+```
+
+## Terraform is being obnoxious (ACL exists, no leader, etc)
 
 Usually not terraform's fault per se.  But here's some stuff that will cause
 hair pulling and only when running terraform.
@@ -194,3 +209,4 @@ if you can.
 
 
 [1]: https://learn.hashicorp.com/tutorials/consul/access-control-troubleshoot?utm_source=consul.io&utm_medium=docs#reset-the-acl-system
+[2]: https://github.com/hashicorp/consul/issues/9939
