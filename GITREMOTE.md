@@ -47,3 +47,45 @@ git merge upstream/main
 ```
 
 If there are conflicts, you will need to resolve them.
+
+## Deleting and restoring
+
+When you're not working with the repo, you may wish to delete it from disk.
+This will clear your remotes and you will need to set them up again.
+
+```bash
+git clone gcrypt::git@github.com:jamesandariese/hs2.022k.git my-own-hashistack
+cd my-own-hashistack
+bash add-upstream.sh
+```
+
+## weird ioctl error
+
+This is talked about on the interwebs but since there's a lot of layers here,
+I'll add that the ioctl error like the following is because of pinentry.
+
+Things like this:
+```
+gpg: public key decryption failed: Inappropriate ioctl for device
+```
+
+You can solve this in a few ways, one of which is telling GPG where your TTY
+for pinentry can be found.
+
+```bash
+export GPG_TTY=$(tty)
+```
+
+You can also use a pinentry program for your OS and tell GPG about it:
+
+```bash
+brew install pinentry-mac
+echo pinentry-program /usr/local/bin/pinentry-mac >> ~/.gnupg/gpg-agent.conf
+```
+
+NOTE: These are sample instructions.  Don't just paste them in but instead
+understand them and then run something _similar_, possibly identical, for your
+workspace.  The `brew install` shown above, for example, will output
+instructions at the end of installation to say what should be done and those
+instructions might change in time.  YMMV caveat emptor a rolling stone gathers
+no entropy etc.
