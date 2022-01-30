@@ -141,7 +141,7 @@ creating a root token for vault which can do anything.  These are your secrets;
 keep them safe!
 
 ```
-vault operator init -ca-cert=../ca-certificates/bootstrap-ca.pem -address=`terraform output -raw vault_https`
+vault operator init -ca-cert=../ca-certificates/bootstrap-ca.pem -address="$(terraform output -raw vault_https)"
 ```
 Save the output to somewhere secure like a password manager.
 
@@ -153,11 +153,11 @@ will then save it to your filesystem.  This will still be a root token but the
 token will expire and be useless if stolen.
 
 ```
-vault operator unseal -ca-cert=../ca-certificates/bootstrap-ca.pem -address=`terraform output -raw vault_https`
-vault operator unseal -ca-cert=../ca-certificates/bootstrap-ca.pem -address=`terraform output -raw vault_https`
-vault operator unseal -ca-cert=../ca-certificates/bootstrap-ca.pem -address=`terraform output -raw vault_https`
-vault login -ca-cert=../ca-certificates/bootstrap-ca.pem -address=`terraform output -raw vault_https`
-vault login -method=token -ca-cert=../ca-certificates/bootstrap-ca.pem -address=`terraform output -raw vault_https` $(vault token create -ca-cert=../ca-certificates/bootstrap-ca.pem -address=`terraform output -raw vault_https` -field=token -ttl=8h)
+vault operator unseal -ca-cert=../ca-certificates/bootstrap-ca.pem -address="$(terraform output -raw vault_https)"
+vault operator unseal -ca-cert=../ca-certificates/bootstrap-ca.pem -address="$(terraform output -raw vault_https)"
+vault operator unseal -ca-cert=../ca-certificates/bootstrap-ca.pem -address="$(terraform output -raw vault_https)"
+vault login -ca-cert=../ca-certificates/bootstrap-ca.pem -address="$(terraform output -raw vault_https)"
+vault login -method=token -ca-cert=../ca-certificates/bootstrap-ca.pem -address="$(terraform output -raw vault_https)" $(vault token create -ca-cert=../ca-certificates/bootstrap-ca.pem -address=`terraform output -raw vault_https` -field=token -ttl=8h)
 ```
 
 All done with vault for now.  You will need to unseal all your vault servers to
